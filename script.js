@@ -20,29 +20,32 @@ class Neuron {
         this.layer = layer;
         this.index = index;
         
-        // Inside constructor(layer, index, totalInLayer)
-        const paddingW = window.innerWidth * 0.02; // Reduced padding to 2% to push them to the very edges
+        // Use 5% padding on left/right edges, 5% on top/bottom
+        const paddingW = window.innerWidth * 0.05;
         const paddingH = window.innerHeight * 0.05; 
 
         const availW = window.innerWidth - (paddingW * 2);
         const availH = window.innerHeight - (paddingH * 2);
 
-        // This line calculates the horizontal position based on the width of the WHOLE screen
+        // Distribute neurons across the FULL screen width (minus padding)
         this.baseX = paddingW + (layer * (availW / (layers.length - 1)));
         this.baseY = paddingH + (availH / (totalInLayer + 1)) * (index + 1);
         
         this.offsetX = Math.random() * Math.PI * 2;
         this.offsetY = Math.random() * Math.PI * 2;
         
+        // Floating range for organic movement
         this.range = 45; 
         this.speed = 0.0007 + Math.random() * 0.0005;
     }
+    
     update() {
         this.offsetX += this.speed;
         this.offsetY += this.speed;
         this.x = this.baseX + Math.sin(this.offsetX) * this.range;
         this.y = this.baseY + Math.cos(this.offsetY) * this.range;
     }
+    
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, 3.5, 0, Math.PI * 2);
@@ -65,14 +68,13 @@ function init() {
         }
     });
 
-    // Create Connections (Limited to 5 per neuron)
+    // Create Connections (Limited to 5 per neuron to avoid clutter)
     neurons.forEach(n1 => {
         const nextLayerNeurons = neurons.filter(n2 => n2.layer === n1.layer + 1);
         
         if (nextLayerNeurons.length > 0) {
-            // Take up to 5 neurons from the next layer
-            // We slice it so it's consistent, or you could shuffle for variety
-            const targets = nextLayerNeurons.slice(0, 5); 
+            // Connect to up to 5 neurons in the next layer
+            const targets = nextLayerNeurons.slice(0, Math.min(5, nextLayerNeurons.length)); 
             
             targets.forEach(n2 => {
                 connections.push([n1, n2]);
@@ -84,6 +86,7 @@ function init() {
 function animate() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     
+    // Draw connections first (so they appear behind neurons)
     connections.forEach(([n1, n2]) => {
         const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
         grad.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); 
@@ -97,10 +100,12 @@ function animate() {
         ctx.stroke();
     });
 
+    // Draw neurons on top of connections
     neurons.forEach(n => {
         n.update();
         n.draw();
     });
+    
     requestAnimationFrame(animate);
 }
 
