@@ -109,7 +109,7 @@ details[open] .details-wrapper { grid-template-rows: 1fr; }
 .project-link { display: inline-block; margin-top: 15px; color: var(--accent-glow); text-decoration: none; font-weight: 700; }
 
 .contact-info { background: rgba(255, 255, 255, 0.02); padding: 40px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.1); }
-footer { text-align: center; padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.05); color: var(--secondary); font-size: 0.8rem; }
+footer { text-align: center; padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.05); color: rgb(255, 255, 255); font-size: 0.8rem; }
 
 @media (max-width: 850px) {
     .project-row, .project-row:nth-child(even) { flex-direction: column; }

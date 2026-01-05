@@ -2,7 +2,8 @@ const canvas = document.getElementById('neuralNet');
 const ctx = canvas.getContext('2d');
 let neurons = [];
 let connections = [];
-const layers = [5, 10, 8, 5]; 
+const layers = [5, 5]; // Left side: 5 neurons, Right side: 5 neurons
+let gradientOffset = 0; 
 
 function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -20,21 +21,18 @@ class Neuron {
         this.layer = layer;
         this.index = index;
         
-        // Use 5% padding on left/right edges, 5% on top/bottom
         const paddingW = window.innerWidth * 0.05;
-        const paddingH = window.innerHeight * 0.05; 
+        const paddingH = window.innerHeight * 0.01; 
 
         const availW = window.innerWidth - (paddingW * 2);
         const availH = window.innerHeight - (paddingH * 2);
 
-        // Distribute neurons across the FULL screen width (minus padding)
         this.baseX = paddingW + (layer * (availW / (layers.length - 1)));
         this.baseY = paddingH + (availH / (totalInLayer + 1)) * (index + 1);
         
         this.offsetX = Math.random() * Math.PI * 2;
         this.offsetY = Math.random() * Math.PI * 2;
         
-        // Floating range for organic movement
         this.range = 45; 
         this.speed = 0.0007 + Math.random() * 0.0005;
     }
@@ -61,20 +59,25 @@ function init() {
     neurons = [];
     connections = [];
     
-    // Create Neurons
     layers.forEach((count, lIndex) => {
         for (let i = 0; i < count; i++) {
             neurons.push(new Neuron(lIndex, i, count));
         }
     });
 
-    // Create Connections (Limited to 5 per neuron to avoid clutter)
+    // Initialize all neuron positions before creating connections
+    neurons.forEach(n => {
+        n.x = n.baseX;
+        n.y = n.baseY;
+    });
+
     neurons.forEach(n1 => {
         const nextLayerNeurons = neurons.filter(n2 => n2.layer === n1.layer + 1);
         
         if (nextLayerNeurons.length > 0) {
-            // Connect to up to 5 neurons in the next layer
-            const targets = nextLayerNeurons.slice(0, Math.min(5, nextLayerNeurons.length)); 
+            // Randomly select 5 neurons to create a web-like pattern with overlapping lines
+            const shuffled = [...nextLayerNeurons].sort(() => Math.random() - 0.5);
+            const targets = shuffled.slice(0, Math.min(5, shuffled.length)); 
             
             targets.forEach(n2 => {
                 connections.push([n1, n2]);
@@ -86,21 +89,33 @@ function init() {
 function animate() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     
-    // Draw connections first (so they appear behind neurons)
-    connections.forEach(([n1, n2]) => {
-        const grad = ctx.createLinearGradient(n1.x, n1.y, n2.x, n2.y);
-        grad.addColorStop(0, 'rgba(139, 92, 246, 0.4)'); 
-        grad.addColorStop(1, 'rgba(34, 211, 238, 0.4)');  
+    // Update gradient offset for slow color transitions
+    gradientOffset += 0.0003;
+    
+    connections.forEach(([n1, n2], index) => {
+        // Each line gets its own random offset for varied color transitions
+        const lineOffset = (gradientOffset + index * 0.1) % 1;
+        
+        // Slowly transition between purple and cyan (more similar colors)
+        const colorMix = (Math.sin(lineOffset * Math.PI * 2) + 1) / 2; // Oscillates between 0 and 1
+        
+        // Interpolate between more similar purple and cyan shades
+        // Purple: (139, 92, 246) -> lighter purple (120, 100, 220)
+        // Cyan: (34, 211, 238) -> more purple-ish cyan (100, 180, 230)
+        const r = Math.floor(120 + (100 - 120) * colorMix);
+        const g = Math.floor(100 + (180 - 100) * colorMix);
+        const b = Math.floor(220 + (230 - 220) * colorMix);
+        
+        const opacity = 0.3 + colorMix * 0.3;
         
         ctx.beginPath();
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
         ctx.moveTo(n1.x, n1.y);
         ctx.lineTo(n2.x, n2.y);
         ctx.stroke();
     });
 
-    // Draw neurons on top of connections
     neurons.forEach(n => {
         n.update();
         n.draw();
